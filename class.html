@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Class</title>
+        <style>
+            body, html {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                height: 100%;
+                color: #FFFFFF;
+                background-color: #9D8DF1;
+            }
+            #navbar {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                background-color: #B8CDF8;
+                color: white;
+                text-align: center;
+                padding: 10px;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            }
+            #navbar a {
+                color: white;
+                padding: 14px 20px;
+                text-decoration: none;
+                display: inline-block;
+                border-radius: 5px;
+                transition: background-color 0.3s ease;
+            }
+            #navbar a:hover {
+                background-color: #9D8DF1;
+            }
+            #page1, #page2, #page3, #page4 {
+                display: none;
+                height: calc(100% - 60px);
+                padding: 20px;
+                box-sizing: border-box;
+                overflow-y: auto;
+            }
+            #page1.active, #page2.active, #page3.active, #page4.active {
+                display: block;
+            }
+            #jaas-container {
+                width: 100%;
+                height: 100%;
+            }
+            #chat-container {
+                display: flex;
+                flex-direction: column;
+                height: calc(100% - 60px);
+                padding: 10px;
+                box-sizing: border-box;
+                background-color: #B8CDF8;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            #chatMessages {
+                flex: 1;
+                overflow-y: auto;
+                margin-bottom: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .message-container {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                margin-bottom: 10px;
+                box-sizing: border-box;
+            }
+            .message-bubble {
+                max-width: 80%;
+                background-color: #B8CDF8;
+                border-radius: 15px;
+                padding: 15px;
+                margin-bottom: 5px;
+                position: relative;
+                font-size: 16px;
+                word-wrap: break-word;
+                text-align: left;
+                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+            }
+            .message-bubble.sent {
+                background-color: #9D8DF1;
+                color: white;
+                align-self: flex-end;
+            }
+            .message-bubble.received {
+                background-color: #B8CDF8;
+                color: white;
+                align-self: flex-start;
+            }
+            .message-bubble .message-date {
+                font-size: 12px;
+                color: #FFFFFF;
+                margin-bottom: 5px;
+            }
+            #chat-input {
+                display: flex;
+                align-items: center;
+                width: 100%;
+                margin-top: auto;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            #messageInput {
+                flex: 1;
+                padding: 8px;
+                border: 1px solid #FFFFFF;
+                border-radius: 5px;
+                margin-right: 10px;
+                font-size: 14px;
+                background-color: #FFFFFF;
+                color: #9D8DF1;
+            }
+            #send-button {
+                padding: 8px 20px;
+                background-color: #9D8DF1;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+            #send-button:hover {
+                background-color: #B8CDF8;
+            }
+            .teacher-message .message-bubble {
+                background-color: #9D8DF1;
+                border-radius: 10px;
+                padding: 10px;
+                margin-right: 10px;
+                align-self: flex-start;
+                word-wrap: break-word;
+            }
+            .student-message .message-bubble {
+                background-color: #4670d0;
+                border-radius: 10px;
+                padding: 10px;
+                margin-left: 10px;
+                color: white;
+                align-self: flex-end;
+                word-wrap: break-word;
+            }
+            #notes-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+            .note-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                cursor: pointer;
+                text-align: center;
+                transition: transform 0.3s ease;
+            }
+            .note-item img {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 10px;
+            }
+            .note-item:hover {
+                transform: translateY(-5px);
+            }
+        </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-storage.js"></script>
+    <script src="https://8x8.vc/vpaas-magic-cookie-a93700bf47ba4d628421a20687f9cd7c/external_api.js" async></script>
+    <script type="text/javascript">
+        let api;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdoEiHLAyKqAkIUuFX7QSZ-QKVgEJ-k-g",
+            authDomain: "terrahub-75dbf.firebaseapp.com",
+            databaseURL: "https://terrahub-75dbf-default-rtdb.firebaseio.com",
+            projectId: "terrahub-75dbf",
+            storageBucket: "terrahub-75dbf.appspot.com",
+            messagingSenderId: "468040062461",
+            appId: "1:468040062461:web:0d48f044d4b484852b3594",
+            measurementId: "G-EZ6B6H3MQ5"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+        window.onload = () => {
+            // Check if the page is loaded inside an iframe
+            if (window.self === window.top) {
+                alert("Not loadable");
+                document.body.innerHTML = ''; // Clear the body content
+                return; // Stop further execution
+            }
+
+            showPage('page1');
+
+        }
+
+        function showPage(pageId) {
+            document.getElementById('page1').classList.remove('active');
+            document.getElementById('page2').classList.remove('active');
+            document.getElementById('page3').classList.remove('active');
+            document.getElementById('page4').classList.remove('active');
+            document.getElementById(pageId).classList.add('active');
+
+            if (pageId === 'page2' && !api) {
+                initializeJitsiMeet();
+            } else if (pageId === 'page3') {
+                fetchChatMessages();
+            } else if (pageId === 'page4') {
+                fetchNotes();
+            }
+        }
+
+        function initializeJitsiMeet() {
+            api = new JitsiMeetExternalAPI("8x8.vc", {
+                roomName: "vpaas-magic-cookie-a93700bf47ba4d628421a20687f9cd7c/SampleAppSpecificTolerancesPrecedeToo",
+                parentNode: document.querySelector('#jaas-container')
+            });
+        }
+
+        function fetchChatMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+
+            const userEmail = sessionStorage.getItem('userEmail').replace(/\./g, ',');
+            if (!userEmail) {
+                console.error('User email not found in session storage.');
+                return;
+            }
+
+            const chatsRef = database.ref('chats');
+
+            chatsRef.once('value', (snapshot) => {
+                snapshot.forEach((teacherSnapshot) => {
+                    const studentSnapshot = teacherSnapshot.child(userEmail);
+                    if (studentSnapshot.exists()) {
+                        studentSnapshot.forEach((messageSnapshot) => {
+                            const message = messageSnapshot.val();
+                            if (message) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.classList.add('message-container');
+
+                                const messageText = document.createElement('div');
+                                messageText.classList.add('message-bubble');
+                                messageText.textContent = message.text;
+
+                                const date = new Date(message.timestamp);
+                                const messageDate = document.createElement('div');
+                                messageDate.classList.add('message-date');
+                                messageDate.textContent = date.toLocaleDateString();
+
+                                messageDiv.appendChild(messageDate);
+                                messageDiv.appendChild(messageText);
+
+                                if (message.sender === 'teacher') {
+                                    messageDiv.classList.add('teacher-message');
+                                } else if (message.sender === 'student') {
+                                    messageDiv.classList.add('student-message');
+                                }
+
+                                chatMessages.appendChild(messageDiv);
+                            }
+                        });
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+            }).catch((error) => {
+                console.error('Error fetching messages:', error);
+            });
+        }
+
+                function sendMessage() {
+                    const messageInput = document.getElementById('messageInput');
+                    const message = messageInput.value.trim();
+
+                    if (message === '') {
+                        return;
+                    }
+
+                    const userEmail = sessionStorage.getItem('userEmail').replace(/\./g, ',');
+                    if (!userEmail) {
+                        console.error('User email not found in session storage.');
+                        return;
+                    }
+
+                    const chatsRef = database.ref('chats');
+
+                    if (sendingMessage) {
+                        console.warn('Already sending a message, please wait.');
+                        return;
+                    }
+
+                    sendingMessage = true;
+
+                    chatsRef.once('value', (snapshot) => {
+                        let messageSent = false;
+
+                        snapshot.forEach((teacherSnapshot) => {
+                            const studentSnapshot = teacherSnapshot.child(userEmail);
+                            if (studentSnapshot.exists()) {
+                                const messageKey = studentSnapshot.ref.push().key;
+                                studentSnapshot.ref.child(messageKey).set({
+                                    sender: 'student',
+                                    text: message,
+                                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                                })
+                                    .then(() => {
+                                        if (!messageSent) {
+                                            messageInput.value = '';
+                                            messageInput.focus();
+                                            fetchChatMessages();
+                                            messageSent = true;
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        console.error('Error sending message:', error);
+                                    })
+                                    .finally(() => {
+                                        sendingMessage = false;
+                                    });
+                            }
+                        });
+                    });
+                }
+
+                let sendingMessage = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatForm = document.getElementById('chatForm');
+            if (chatForm) {
+                chatForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    sendMessage();
+                });
+            }
+
+            fetchClassMeetingTimes();
+        });
+
+        function fetchClassMeetingTimes() {
+            const userEmail = sessionStorage.getItem('userEmail');
+            if (!userEmail) {
+                console.error('User email not found in session storage.');
+                return;
+            }
+            const encodedUserEmail = userEmail.replace(/\./g, ',');
+            const userClassesRef = database.ref(`users/${encodedUserEmail}/classes`);
+
+            userClassesRef.once('value', (snapshot) => {
+                const classNames = [];
+                snapshot.forEach((classSnapshot) => {
+                    const className = classSnapshot.child('className').val();
+                    if (className) {
+                        classNames.push(className);
+                    }
+                });
+
+                if (classNames.length > 0) {
+                    findClassMeetingTimes(classNames);
+                } else {
+                    console.error('No classes found for the user.');
+                }
+            });
+        }
+
+        function findClassMeetingTimes(classNames) {
+            const usersRef = database.ref('users');
+            usersRef.once('value', (snapshot) => {
+                snapshot.forEach((userSnapshot) => {
+                    const userClasses = userSnapshot.child('classes');
+                    userClasses.forEach((classSnapshot) => {
+                        const className = classSnapshot.child('className').val();
+                        if (classNames.includes(className)) {
+                            const classDate = classSnapshot.child('classDate').val();
+                            const classTimezone = classSnapshot.child('classTimezone').val();
+                            if (classDate && classTimezone) {
+                                displayClassMeetingTime(className, classDate, classTimezone);
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        function displayClassMeetingTime(className, classDate, classTimezone) {
+            const classInfoContainer = document.getElementById('classInfoContainer');
+            const classInfoDiv = document.createElement('div');
+            classInfoDiv.textContent = `Class: ${className}, Next Class Date: ${classDate}, Next Class Timing/Timezone: ${classTimezone}`;
+            classInfoContainer.appendChild(classInfoDiv);
+        }
+
+        function fetchNotes() {
+            const userEmail = sessionStorage.getItem('userEmail');
+            if (!userEmail) {
+                console.error('User email not found in session storage.');
+                return;
+            }
+            const notesRef = storage.ref(`${userEmail}/notes`);
+
+            notesRef.listAll()
+                .then((result) => {
+                    const notesContainer = document.getElementById('notes-container');
+                    notesContainer.innerHTML = ''; // Clear previous notes
+
+                    result.items.forEach((noteRef) => {
+                        noteRef.getMetadata().then((metadata) => {
+                            const noteItem = document.createElement('div');
+                            noteItem.classList.add('note-item');
+
+                            const fileType = metadata.contentType;
+                            let iconSrc;
+
+                            if (fileType.startsWith('image/')) {
+                                iconSrc = 'image.png';
+                            } else if (fileType.startsWith('application/pdf')) {
+                                iconSrc = 'pdf.png';
+                            } else if (fileType.startsWith('application/msword') || fileType.startsWith('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+                                iconSrc = 'word.png';
+                            } else {
+                                iconSrc = 'new-document.png';
+                            }
+
+                            const noteIcon = document.createElement('img');
+                            noteIcon.src = iconSrc;
+                            noteIcon.alt = metadata.name;
+
+                            const noteName = document.createElement('div');
+                            noteName.textContent = metadata.name;
+
+                            noteItem.appendChild(noteIcon);
+                            noteItem.appendChild(noteName);
+
+                            noteItem.addEventListener('click', () => {
+                                noteRef.getDownloadURL().then((url) => {
+                                    window.open(url, '_blank');
+                                });
+                            });
+
+                            notesContainer.appendChild(noteItem);
+                        });
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error fetching notes:', error);
+                });
+        }
+    </script>
+</head>
+<body>
+
+<div id="page1" class="active">
+    <h1>Welcome to the Sample Class!</h1>
+    <div id="classInfoContainer"></div>
+    <p>This is the first page of the application with a title heading and some paragraph text.</p>
+</div>
+
+<div id="page2">
+    <div id="jaas-container"></div>
+</div>
+
+<div id="page3">
+    <h2>Chat with Teacher</h2>
+    <div id="chat-container">
+        <div id="chatMessages" class="chat-messages"></div>
+        <form id="chatForm" onsubmit="sendMessage(); return false;">
+            <div id="chat-input">
+                <input type="text" id="messageInput" class="message-input" placeholder="Type your message...">
+                <button type="submit" id="send-button">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="page4">
+    <h2>Notes and Worksheets</h2>
+    <div id="notes-container"></div>
+</div>
+
+<div id="navbar">
+    <a href="#" onclick="showPage('page1')">Course Information</a>
+    <a href="#" onclick="showPage('page2')">Meeting</a>
+    <a href="#" onclick="showPage('page3')">Chat with Teacher</a>
+    <a href="#" onclick="showPage('page4')">Notes</a>
+</div>
+</body>
+</html>

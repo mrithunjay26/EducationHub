@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background-color: #7b6ada;
+            color: white;
+        }
+        .container {
+            display: flex;
+            height: 100%;
+        }
+        .image-section {
+            flex: 1;
+            background: url('yea.png') no-repeat center center/cover;
+        }
+        .form-section {
+            flex: 1;
+            background-color: #9d8df1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        .form-section h2 {
+            margin-bottom: 20px;
+            color: white;
+        }
+        .form-section form {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-section label {
+            margin-bottom: 5px;
+        }
+        .form-section input {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #9588E1;
+            color: white;
+        }
+        .form-section input::placeholder {
+            color: white;
+        }
+        .form-section button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: white;
+            color: #7B6ADA;
+            cursor: pointer;
+        }
+        .form-section button:hover {
+            background-color: #9588E1;
+            color: white;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="image-section"></div>
+    <div class="form-section">
+        <h2>Welcome to Open Path!</h2>
+        <form id="loginForm" onsubmit="return loginUser()">
+            <label for="email">Email Address:</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+
+            <label for="password">Passcode:</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+            <button type="submit">Login</button>
+        </form>
+        <div class="footer">
+            &copy; 2024, Open Path
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-database.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBdoEiHLAyKqAkIUuFX7QSZ-QKVgEJ-k-g",
+        authDomain: "terrahub-75dbf.firebaseapp.com",
+        databaseURL: "https://terrahub-75dbf-default-rtdb.firebaseio.com",
+        projectId: "terrahub-75dbf",
+        storageBucket: "terrahub-75dbf.appspot.com",
+        messagingSenderId: "468040062461",
+        appId: "1:468040062461:web:0d48f044d4b484852b3594",
+        measurementId: "G-EZ6B6H3MQ5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    function loginUser() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        database.ref('users').orderByChild('email').equalTo(email).once('value', snapshot => {
+            const userData = snapshot.val();
+            if (userData) {
+                const userId = Object.keys(userData)[0];
+                if (userData[userId].password === password) {
+                    const tag = userData[userId].tag;
+                    sessionStorage.setItem('userEmail', email);
+                    if (tag === 'student') {
+                        window.location.href = 'dashboard.html';
+                    } else if (tag === 'teacher') {
+                        window.location.href = 'teacherdash.html';
+                    } else {
+                        alert('Unknown user tag');
+                    }
+                } else {
+                    alert('Incorrect password');
+                }
+            } else {
+                alert('User not found');
+            }
+        });
+
+        return false;
+    }
+</script>
+</body>
+</html>
