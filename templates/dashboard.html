@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            color: white;
+            background-color: #7B6ADA;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #9588E1;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar .home-button {
+            display: block;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 15px;
+            background-color: white;
+            color: #7B6ADA;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .sidebar .home-button:hover {
+            background-color: #7B6ADA;
+            color: white;
+        }
+        .sidebar .class-button {
+            display: block;
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #7B6ADA;
+            text-decoration: none;
+            border-radius: 8px;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .sidebar .class-button:hover {
+            background-color: #9588E1;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            background-color: #7B6ADA;
+        }
+        .profile-form input {
+            display: block;
+            margin-bottom: 15px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            color: #7B6ADA;
+            border: 1px solid #9588E1;
+            border-radius: 5px;
+            background-color: white;
+        }
+        .profile-form button {
+            padding: 10px;
+            background-color: white;
+            color: #7B6ADA;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            font-weight: bold;
+        }
+        .profile-form button:hover {
+            background-color: #9588E1;
+            color: white;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            flex: 1;
+            overflow: auto;
+            background-color: #7B6ADA;
+        }
+        .box {
+            flex: 1;
+            padding: 20px;
+            min-width: 300px;
+            background-color: #9588E1;
+            margin: 10px;
+            border-radius: 8px;
+            color: white;
+        }
+        iframe {
+            width: 100%;
+            flex: 1;
+            border: none;
+        }
+        .hidden {
+            display: none;
+        }
+        .assignment-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .assignment-button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #9588E1;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            color: #7B6ADA;
+            font-weight: bold;
+        }
+        .assignment-button:hover {
+            background-color: #9588E1;
+            color: white;
+        }
+        .assignment-details {
+            background-color: #7B6ADA;
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+        }
+        .upload-button, .submit-button {
+            padding: 10px 20px;
+            background-color: white;
+            color: #7B6ADA;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .upload-button:hover, .submit-button:hover {
+            background-color: #9588E1;
+            color: white;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-storage.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdoEiHLAyKqAkIUuFX7QSZ-QKVgEJ-k-g",
+            authDomain: "terrahub-75dbf.firebaseapp.com",
+            databaseURL: "https://terrahub-75dbf-default-rtdb.firebaseio.com",
+            projectId: "terrahub-75dbf",
+            storageBucket: "terrahub-75dbf.appspot.com",
+            messagingSenderId: "468040062461",
+            appId: "1:468040062461:web:0d48f044d4b484852b3594",
+            measurementId: "G-EZ6B6H3MQ5"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        const database = firebase.database();
+        const storage = firebase.storage();
+        const userEmail = sessionStorage.getItem('userEmail');
+        if (!userEmail) {
+            alert('User not authenticated.');
+            window.location.href = '/';
+        }
+
+        window.onload = function() {
+            const encodedEmail = userEmail.replace(/\./g, ',');
+            const userRef = database.ref('users/' + encodedEmail);
+            userRef.on('value', (snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('name').value = userData.name || '';
+                    document.getElementById('bio').value = userData.bio || '';
+                    const classList = userData.classes || {};
+                    renderClassButtons(classList);
+                }
+            });
+
+            document.getElementById('updateProfile').addEventListener('click', () => {
+                const name = document.getElementById('name').value;
+                const bio = document.getElementById('bio').value;
+                const passcode = document.getElementById('passcode').value;
+
+                userRef.update({
+                    name: name,
+                    bio: bio,
+                    password: passcode
+                });
+            });
+
+            loadAssignments();
+        }
+
+        function renderClassButtons(classes) {
+            const classList = document.getElementById('classList');
+            classList.innerHTML = '';
+            for (const classKey in classes) {
+                if (classes.hasOwnProperty(classKey)) {
+                    const classData = classes[classKey];
+                    const classButton = document.createElement('a');
+                    classButton.href = '#';
+                    classButton.innerText = `${classData.className} (${classData.tag})`;
+                    classButton.className = 'class-button';
+                    classButton.onclick = (event) => {
+                        event.preventDefault();
+                        document.querySelector('.profile-form').classList.add('hidden');
+                        document.querySelector('.container').classList.add('hidden');
+                        document.getElementById('content-frame').src = `/${classData.htmlFileName}`;
+                        document.getElementById('content-frame').classList.remove('hidden');
+                    };
+                    classList.appendChild(classButton);
+                }
+            }
+        }
+
+        function loadAssignments() {
+            const encodedEmail = userEmail.replace(/\./g, ',');
+            const assignmentsRef = database.ref('users/' + encodedEmail + '/assignments');
+            assignmentsRef.on('value', (snapshot) => {
+                const pendingAssignmentsList = document.getElementById('pending-assignments-list');
+                const completedAssignmentsList = document.getElementById('completed-assignments-list');
+                pendingAssignmentsList.innerHTML = '';
+                completedAssignmentsList.innerHTML = '';
+
+                snapshot.forEach((childSnapshot) => {
+                    const assignment = childSnapshot.val();
+                    const button = document.createElement('button');
+                    button.textContent = assignment.title;
+                    button.className = 'assignment-button';
+                    button.onclick = () => loadAssignmentDetails(childSnapshot.key, assignment.title);
+
+                    if (assignment.uploaded) {
+                        completedAssignmentsList.appendChild(button);
+                    } else {
+                        pendingAssignmentsList.appendChild(button);
+                    }
+                });
+            });
+        }
+
+        function loadAssignmentDetails(assignmentId, assignmentName) {
+            sessionStorage.setItem('selectedAssignment', assignmentId);
+            sessionStorage.setItem('selectedAssignmentName', assignmentName);
+            const encodedEmail = userEmail.replace(/\./g, ',');
+            const assignmentRef = database.ref('users/' + encodedEmail + '/assignments/' + assignmentId);
+            assignmentRef.once('value').then((snapshot) => {
+                const assignment = snapshot.val();
+                document.getElementById('assignment-info').innerHTML = `
+            <div class="assignment-details">
+                <h3>${assignment.title}</h3>
+                <p>${assignment.details}</p>
+                <p>Class: ${assignment.class}</p>
+            </div>
+        `;
+
+                if (!assignment.uploaded && !assignment.submitted) {
+                    // Show upload and submit buttons only if assignment is pending
+                    document.getElementById('assignment-info').innerHTML += `
+                <input type="file" id="file-upload" />
+                <button class="upload-button" onclick="uploadAssignment()">Upload Assignment</button>
+                <button class="submit-button" onclick="submitAssignment()">Submit Assignment</button>
+            `;
+                }
+            });
+        }
+
+
+        function uploadAssignment() {
+            const file = document.getElementById('file-upload').files[0];
+            const selectedAssignment = sessionStorage.getItem('selectedAssignment');
+            const selectedAssignmentName = sessionStorage.getItem('selectedAssignmentName');
+            if (file && selectedAssignment) {
+                const storagePath = userEmail + '/assignments/' + selectedAssignmentName + '/' + file.name;
+                const storageRef = storage.ref(storagePath);
+                storageRef.put(file).then(() => {
+                    const encodedEmail = userEmail.replace(/\./g, ',');
+                    database.ref('users/' + encodedEmail + '/assignments/' + selectedAssignment).update({
+                        uploaded: true,
+                        fileName: file.name
+                    }).then(() => {
+                        alert('File uploaded successfully!');
+                        loadAssignments();
+                    });
+                }).catch((error) => {
+                    console.error('File upload failed:', error);
+                });
+            } else {
+                alert('Please select a file and an assignment.');
+            }
+        }
+
+        function submitAssignment() {
+            const selectedAssignment = sessionStorage.getItem('selectedAssignment');
+            const encodedEmail = userEmail.replace(/\./g, ',');
+            database.ref('users/' + encodedEmail + '/assignments/' + selectedAssignment).update({
+                submitted: true
+            }).then(() => {
+                alert('Assignment submitted successfully!');
+                loadAssignments();
+            }).catch((error) => {
+                console.error('Error submitting assignment:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+<div class="sidebar">
+    <a href="/dashboard" class="home-button" onclick="showProfileForm()">Home</a>
+    <div id="classList"></div>
+</div>
+<div class="main-content">
+    <h1>Edit Profile</h1>
+    <div class="profile-form">
+        <input type="text" id="name" placeholder="Name">
+        <input type="text" id="bio" placeholder="Bio">
+        <input type="password" id="passcode" placeholder="Change Passcode">
+        <button id="updateProfile">Update Profile</button>
+    </div>
+    <iframe id="content-frame" class="hidden"></iframe>
+    <div class="container">
+        <div class="box" id="pending-assignments">
+            <h2>Pending Assignments</h2>
+            <div id="pending-assignments-list"></div>
+        </div>
+        <div class="box" id="completed-assignments">
+            <h2>Completed Assignments</h2>
+            <div id="completed-assignments-list"></div>
+        </div>
+        <div class="box" id="assignment-details">
+            <h2>Assignment Details</h2>
+            <div id="assignment-info"></div>
+        </div>
+    </div>
+</div>
+<script>
+    function showProfileForm() {
+        document.querySelector('.profile-form').classList.remove('hidden');
+        document.querySelector('.container').classList.remove('hidden');
+        document.getElementById('content-frame').classList.add('hidden');
+    }
+</script>
+</body>
+</html>
